@@ -28,7 +28,9 @@ public extension SimpleCache {
             return SimpleCache(resourceLoader: resourceLoader)
         } else {
             return SimpleCache(resourceLoader: { url, completion in
-                let session = URLSession.shared
+                let configuration = URLSessionConfiguration.ephemeral
+                let session = URLSession(configuration: configuration)
+
                 let task = session.dataTask(with: url) { data, response, error in
                     completion(data)
                 }
