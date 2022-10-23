@@ -8,6 +8,7 @@ final class SimpleCacheTests: XCTestCase {
         
         let url = URL(string: "https://cdn.vox-cdn.com/verge/favicon.ico")
         let sut = SimpleCache()
+        sut.numberOfCaches = 2
 
         let unwrapURL = try XCTUnwrap(url)
         sut.get(unwrapURL) { data in

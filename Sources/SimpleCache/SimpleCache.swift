@@ -18,7 +18,8 @@ public final class SimpleCache {
         if let data = cache.get(url) {
             completion(data)
         } else {
-            if let request = try? HTTPClient.Request(url: url.absoluteString, method: .GET) {
+            if let request = try? HTTPClient.Request(url: url.absoluteString, method: .GET), 
+                let scheme = url.scheme, scheme.contains("http") {
                 httpClient.execute(request: request).whenComplete { [weak self] result in
                     switch result {
                     case .failure(let error): print(error)
@@ -33,6 +34,9 @@ public final class SimpleCache {
                         }
                     }
                 }
+            } else {
+                let data = try? Data(contentsOf: url)
+                completion(data)
             }
         }
     }
