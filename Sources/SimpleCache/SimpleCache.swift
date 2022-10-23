@@ -2,17 +2,20 @@ import Foundation
 import AsyncHTTPClient
 
 public final class SimpleCache {
-    public typealias ResourceLoader = (URL, @escaping (Data?) -> Void) -> Void
+    public var numberOfCaches = 100
 
-    private var cache: [URL: Data] = [:]
+    private let cache: LRUCache
     private let httpClient = HTTPClient(eventLoopGroupProvider: .createNew)
 
+    init() {
+        self.cache = LRUCache(numberOfCaches: numberOfCaches)
+    }
     deinit {
         try? httpClient.syncShutdown()
     }
 
     public func get(_ url: URL, completion: @escaping (Data?) -> Void) {
-        if let data = cache[url] {
+        if let data = cache.get(url) {
             completion(data)
         } else {
             if let request = try? HTTPClient.Request(url: url.absoluteString, method: .GET) {
@@ -24,7 +27,9 @@ public final class SimpleCache {
                             let length = response.body?.readableBytes ?? 0
                             let data = response.body?.readData(length: length)
                             completion(data)
-                            self?.cache[url] = data
+                            if let data = data {
+                                self?.cache.set(url, data: data)
+                            }
                         }
                     }
                 }
