@@ -1,3 +1,3 @@
 # SimpleCache
 
-A simple implementation of remote resource cache
+A simple implementation of remote/local resource cache
