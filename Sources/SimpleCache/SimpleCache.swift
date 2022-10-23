@@ -1,41 +1,34 @@
 import Foundation
+import AsyncHTTPClient
 
 public final class SimpleCache {
     public typealias ResourceLoader = (URL, @escaping (Data?) -> Void) -> Void
 
     private var cache: [URL: Data] = [:]
-    private let resourceLoader: ResourceLoader
+    private let httpClient = HTTPClient(eventLoopGroupProvider: .createNew)
 
-    public init(resourceLoader: @escaping ResourceLoader) {
-        self.resourceLoader = resourceLoader
+    deinit {
+        try? httpClient.syncShutdown()
     }
 
     public func get(_ url: URL, completion: @escaping (Data?) -> Void) {
         if let data = cache[url] {
             completion(data)
         } else {
-            resourceLoader(url) { [weak self] data in
-                self?.cache[url] = data
-                completion(data)
-            }
-        }
-    }
-}
-
-public extension SimpleCache {
-    static func make(resourceLoader: ResourceLoader?) -> SimpleCache {
-        if let resourceLoader = resourceLoader {
-            return SimpleCache(resourceLoader: resourceLoader)
-        } else {
-            return SimpleCache(resourceLoader: { url, completion in
-                let configuration = URLSessionConfiguration.ephemeral
-                let session = URLSession(configuration: configuration)
-
-                let task = session.dataTask(with: url) { data, response, error in
-                    completion(data)
+            if let request = try? HTTPClient.Request(url: url.absoluteString, method: .GET) {
+                httpClient.execute(request: request).whenComplete { [weak self] result in
+                    switch result {
+                    case .failure(let error): print(error)
+                    case .success(var response):
+                        if response.status == .ok {
+                            let length = response.body?.readableBytes ?? 0
+                            let data = response.body?.readData(length: length)
+                            completion(data)
+                            self?.cache[url] = data
+                        }
+                    }
                 }
-                task.resume()
-            })
+            }
         }
     }
 }

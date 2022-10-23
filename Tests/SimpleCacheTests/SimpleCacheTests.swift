@@ -7,7 +7,7 @@ final class SimpleCacheTests: XCTestCase {
         let expectGetCache = expectation(description: #function)
         
         let url = URL(string: "https://cdn.vox-cdn.com/verge/favicon.ico")
-        let sut = SimpleCache.make(resourceLoader: nil)
+        let sut = SimpleCache()
 
         let unwrapURL = try XCTUnwrap(url)
         sut.get(unwrapURL) { data in
